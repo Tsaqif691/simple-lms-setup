@@ -59,3 +59,20 @@ Ikuti langkah-langkah berikut secara berurutan untuk menjalankan project di ling
 
 ## 📸 Screenshot Django Welcome Page
 ![Welcome Page](welcome-page.png)
+
+---
+## 🚀 Laporan Optimasi Query (Assignment 2)
+
+Saya telah mengimplementasikan Custom Model Manager untuk mengatasi masalah **N+1 Query**. Berikut adalah hasil pengujian menggunakan script `demo_query.py`:
+
+*   **Data Testing**: 3 Courses
+*   **Query Standar**: 7 query (1 query list + 6 query relasi ke Instructor & Category)
+*   **Optimized Query**: **1 query** (Menggunakan `select_related` dengan SQL JOIN)
+*   **Efisiensi**: Berhasil menghemat **6 query** atau sekitar 85% penghematan beban database.
+
+### ✅ Checklist Kriteria Penilaian
+- [x] Desain database schema LMS lengkap (User, Category, Course, Lesson, Enrollment, Progress).
+- [x] Relasi ForeignKey, Self-referencing, dan Unique Constraints.
+- [x] Optimasi query dengan `select_related` dan `prefetch_related`.
+- [x] Konfigurasi Django Admin dengan List Display, Filter, Search, dan Inline Lesson.
+- [x] Migration Files dan Initial Data Fixtures.
