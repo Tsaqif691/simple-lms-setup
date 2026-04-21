@@ -48,6 +48,7 @@ class Meta:
         models.Index(fields=['created_at'], name='idx_course_created_at'),
         models.Index(fields=['instructor', 'created_at'], name='idx_instructor_created')
     ]
+```
 
 Hal ini memastikan pencarian berdasarkan instruktur atau waktu pembuatan tetap optimal meskipun jumlah data terus bertambah.
 
