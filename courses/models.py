@@ -15,7 +15,7 @@ class EnrollmentQuerySet(models.QuerySet):
         # Ini akan melakukan 2 query efektif dan menggabungkannya di level Python
         return self.prefetch_related('lesson_progress', 'course__lessons')
 
-# 1. Custom User Model (Sudah kita buat sebelumnya, tetap di sini)
+# 1. Custom User Model 
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
@@ -47,6 +47,13 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+    
+    class Meta:
+        # Menambahkan index untuk mempercepat pencarian/sorting berdasarkan waktu dibuat dan instruktur
+        indexes = [
+            models.Index(fields=['created_at'], name='idx_course_created_at'),
+            models.Index(fields=['instructor', 'created_at'], name='idx_instructor_created')
+        ]
 
 # 4. Lesson Model (dengan Ordering)
 class Lesson(models.Model):
