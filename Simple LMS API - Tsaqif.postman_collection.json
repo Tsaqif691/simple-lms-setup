@@ -1,0 +1,35 @@
+{
+	"info": {
+		"_postman_id": "66fede1c-fb34-4a31-81a9-3f2a2857a337",
+		"name": "Simple LMS API - Tsaqif",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "54347851",
+		"_collection_link": "https://tsaqif691-4175441.postman.co/workspace/tsaqif691's-Workspace~90ea9349-5938-4616-86c5-ccfa84577cd4/collection/54347851-66fede1c-fb34-4a31-81a9-3f2a2857a337?action=share&source=collection_link&creator=54347851"
+	},
+	"item": [
+		{
+			"name": "1. PING System",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "2. Register User",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "3. Login User",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
