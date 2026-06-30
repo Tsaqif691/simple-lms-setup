@@ -1,32 +1,81 @@
+
 services:
-  # 1. Service Web (Aplikasi Django)
+  # 1. Database Relasional (PostgreSQL)
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: lms_db
+      POSTGRES_USER: lms_user
+      POSTGRES_PASSWORD: secretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. In-Memory Cache (Redis)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # 3. NoSQL Database untuk Logs (MongoDB)
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  # 4. Message Broker untuk Celery (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"   # Port utama RabbitMQ
+      - "15672:15672" # Port Dashboard Manajemen UI
+
+  # 5. Aplikasi Utama (Django API)
   web:
     build: .
-    container_name: simple_lms_web
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     depends_on:
-      database:
-        condition: service_healthy
+      - db
+      - redis
+      - mongodb
+      - rabbitmq
 
-  # 2. Service Database (PostgreSQL)
-  database:
-    image: postgres:15-alpine
-    container_name: simple_lms_db
-    environment:
-      POSTGRES_DB: lms_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+  # 6. Pekerja Asinkron (Celery Worker)
+  celery-worker:
+    build: .
+    command: celery -A config worker -l info
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - .:/app
+    depends_on:
+      - web
+      - rabbitmq
+      - redis
+
+  # 7. Penjadwal Tugas Asinkron (Celery Beat)
+  celery-beat:
+    build: .
+    command: celery -A config beat -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - celery-worker
+
+  # 8. Dashboard Monitoring Celery (Flower)
+  flower:
+    build: .
+    command: celery -A config flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - celery-worker
 
 volumes:
   postgres_data:
+  mongodb_data:

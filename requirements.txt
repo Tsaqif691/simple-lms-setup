@@ -4,3 +4,7 @@ django-silk
 django-ninja
 PyJWT
 email-validator
+redis
+pymongo
+celery
+flower

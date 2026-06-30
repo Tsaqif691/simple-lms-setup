@@ -1,13 +1,25 @@
-# Simple LMS - Setup Environment
+# Simple LMS - Setup Environment & REST API
 
-Project ini adalah inisialisasi awal untuk aplikasi Simple LMS menggunakan Django dan PostgreSQL yang dijalankan di dalam container Docker. Project ini dirancang dengan struktur *best practice* untuk memenuhi kriteria tugas Pemrograman Sisi Server.
+Project ini adalah aplikasi Simple LMS menggunakan Django dan PostgreSQL yang dijalankan di dalam container Docker. Project ini dirancang dengan struktur *best practice* untuk memenuhi kriteria tugas Pemrograman Sisi Server, mulai dari optimasi database, arsitektur REST API, Rate Limiting, hingga Background Tasks.
 
 ## 📦 Persyaratan Sistem
+
 Pastikan sistem Anda sudah terinstal perangkat lunak berikut:
+
 - Docker Desktop (pastikan dalam keadaan *running*)
 - Git
 
+## 🛠️ Tech Stack & Infrastruktur
+
+- **Backend Framework:** Django & Django Ninja (REST API)
+- **Database Utama:** PostgreSQL 14
+- **Caching & Rate Limiting:** Redis
+- **Message Broker:** RabbitMQ
+- **Background Task Processing:** Celery (Worker & Beat)
+- **Containerization:** Docker & Docker Compose
+
 ## 🛠️ Penjelasan Environment Variables
+
 Project ini menggunakan *environment variables* untuk menjaga keamanan kredensial dan konfigurasi. File `.env.example` telah disediakan di dalam *repository* sebagai referensi. Berikut adalah penjelasan untuk masing-masing variabel:
 
 - `DEBUG`: Mengatur mode debug Django (`True` untuk *development*, `False` untuk *production*).
@@ -15,7 +27,7 @@ Project ini menggunakan *environment variables* untuk menjaga keamanan kredensia
 - `POSTGRES_DB`: Nama database PostgreSQL yang akan dibuat dan digunakan (contoh: `lms_db`).
 - `POSTGRES_USER`: *Username* untuk mengakses database PostgreSQL.
 - `POSTGRES_PASSWORD`: *Password* untuk mengakses database.
-- `POSTGRES_HOST`: *Host* database (menggunakan nama *service* `database` yang terdaftar di Docker Compose).
+- `POSTGRES_HOST`: *Host* database (menggunakan nama *service* `database` atau `db` yang terdaftar di Docker Compose).
 - `POSTGRES_PORT`: *Port* yang digunakan oleh PostgreSQL (default: `5432`).
 
 ## 🚀 Cara Menjalankan Project
@@ -23,56 +35,99 @@ Project ini menggunakan *environment variables* untuk menjaga keamanan kredensia
 Ikuti langkah-langkah berikut secara berurutan untuk menjalankan project di lingkungan lokal Anda:
 
 1. **Clone repository ini**
+
    Unduh *source code* ke komputer Anda dan masuk ke direktori project.
+
    ```bash
    git clone https://github.com/Tsaqif691/simple-lms-setup.git
    cd simple-lms
    ```
 
 2. **Siapkan file Environment**
-   Salin *template* environment yang sudah disediakan menjadi file `.env` yang akan dibaca oleh sistem.
+
+   Salin template environment yang sudah disediakan menjadi file `.env` yang akan dibaca oleh sistem.
+
    ```bash
    cp .env.example .env
    ```
 
 3. **Build dan Jalankan Container**
-   Jalankan perintah berikut untuk merakit *image* Docker dan menyalakan seluruh *services* (Web dan Database) di latar belakang (*background*):
+
+   Jalankan perintah berikut untuk merakit image Docker dan menyalakan seluruh services (Web, Database, Redis, RabbitMQ, dan Celery) di latar belakang (*background*):
+
    ```bash
    docker compose up -d --build
    ```
 
 4. **Lakukan Migrasi Database**
+
    Jalankan perintah migrasi agar tabel-tabel bawaan Django dibuat di dalam database PostgreSQL:
+
    ```bash
    docker compose exec web python manage.py migrate
    ```
 
-5. **Akses Aplikasi**
-   Buka *web browser* Anda dan kunjungi alamat berikut untuk melihat halaman awal Django: 
-   `http://localhost:8000`
+5. **Akses Aplikasi & Dokumentasi API**
+
+   Buka web browser Anda dan kunjungi alamat berikut untuk melihat halaman awal Django:
+
+   http://localhost:8000
+
+   Untuk melihat dan menguji endpoint REST API secara interaktif, buka Swagger UI di:
+
+   http://localhost:8000/api/docs
 
 6. **Menghentikan Aplikasi**
-   Jika Anda sudah selesai mengembangkan aplikasi dan ingin mematikan *server*, gunakan perintah:
+
+   Jika Anda sudah selesai mengembangkan aplikasi dan ingin mematikan server beserta seluruh ekosistemnya, gunakan perintah:
+
    ```bash
    docker compose down
    ```
 
 ## 📸 Screenshot Django Welcome Page
-![Welcome Page](welcome-page.png)
 
----
 ## 🚀 Laporan Optimasi Query (Assignment 2)
 
-Saya telah mengimplementasikan Custom Model Manager untuk mengatasi masalah **N+1 Query**. Berikut adalah hasil pengujian menggunakan script `demo_query.py`:
+Saya telah mengimplementasikan Custom Model Manager untuk mengatasi masalah N+1 Query. Berikut adalah hasil pengujian menggunakan script `demo_query.py`:
 
-*   **Data Testing**: 3 Courses
-*   **Query Standar**: 7 query (1 query list + 6 query relasi ke Instructor & Category)
-*   **Optimized Query**: **1 query** (Menggunakan `select_related` dengan SQL JOIN)
-*   **Efisiensi**: Berhasil menghemat **6 query** atau sekitar 85% penghematan beban database.
+**Data Testing:** 3 Courses
 
-### ✅ Checklist Kriteria Penilaian
+**Query Standar:** 7 query (1 query list + 6 query relasi ke Instructor & Category)
+
+**Optimized Query:** 1 query (Menggunakan `select_related` dengan SQL JOIN)
+
+**Efisiensi:** Berhasil menghemat 6 query atau sekitar 85% penghematan beban database.
+
+## ✅ Checklist Kriteria Penilaian (Assignment 2)
+
 - [x] Desain database schema LMS lengkap (User, Category, Course, Lesson, Enrollment, Progress).
 - [x] Relasi ForeignKey, Self-referencing, dan Unique Constraints.
 - [x] Optimasi query dengan `select_related` dan `prefetch_related`.
 - [x] Konfigurasi Django Admin dengan List Display, Filter, Search, dan Inline Lesson.
 - [x] Migration Files dan Initial Data Fixtures.
+
+## 🚀 Laporan REST API, Caching & Background Tasks 
+
+Pada fase ini, saya telah mengembangkan arsitektur API berbasis microservices-lite untuk menangani proses asinkron yang berat dan membatasi lalu lintas API agar server tetap stabil.
+
+**Keamanan API (Rate Limiting):** Mengimplementasikan Custom Middleware yang terhubung dengan Redis In-Memory Cache untuk membatasi request maksimal 60 request/menit per alamat IP pada jalur `/api/`.
+
+### Asynchronous Tasks (Celery + RabbitMQ)
+
+- Pengiriman email selamat datang saat pengguna (Student) melakukan enrollment ke sebuah kursus (berjalan asinkron di background).
+- Generate dokumen Sertifikat Kelulusan saat pengguna menandai penyelesaian materi pelajaran.
+- Kompilasi dan ekspor data analitik kursus ke format CSV.
+
+### Scheduled Tasks (Celery Beat)
+
+Mengonfigurasi penjadwalan otomatis untuk memperbarui dan memonitor jumlah statistik pendaftar kursus setiap 5 menit.
+
+## ✅ Checklist Kriteria Penilaian 
+
+- [x] Pembuatan endpoint REST API terpusat menggunakan framework Django Ninja.
+- [x] Implementasi sistem autentikasi JWT (JSON Web Token) & Role-Based Access Control (RBAC).
+- [x] Implementasi Rate Limiting menggunakan middleware dan Redis.
+- [x] Setup dan integrasi Message Broker menggunakan RabbitMQ melalui Docker Compose.
+- [x] Eksekusi pemrosesan data berat (Email, Dokumen, Ekspor) melalui Celery Worker.
+- [x] Implementasi cron job untuk tugas repetitif menggunakan Celery Beat.

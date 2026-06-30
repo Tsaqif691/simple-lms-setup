@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'silk.middleware.SilkyMiddleware',
+    'config.middleware.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -79,11 +80,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'lms_db'),
-        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'database'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'NAME': 'lms_db',
+        'USER': 'lms_user',          
+        'PASSWORD': 'secretpassword', 
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 
@@ -130,3 +131,30 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 AUTH_USER_MODEL = 'courses.User'
+
+# --- CELERY & RABBITMQ CONFIGURATION ---
+# Memberitahu Celery untuk menggunakan RabbitMQ sebagai pengantar pesan (Broker)
+CELERY_BROKER_URL = "amqp://guest:guest@rabbitmq:5672//"
+# Menyimpan hasil tugas Celery ke dalam Redis (Database 0)
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# --- REDIS CACHING CONFIGURATION ---
+# Menggunakan Redis (Database 1) untuk menyimpan cache API
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://redis:6379/1",
+    }
+}
+
+from celery.schedules import crontab
+
+# Konfigurasi Jadwal Rutin Celery Beat
+CELERY_BEAT_SCHEDULE = {
+    'update-stats-every-5-minutes': {
+        'task': 'courses.tasks.update_course_statistics',
+        'schedule': 300.0, # Berjalan otomatis setiap 300 detik (5 menit)
+    },
+}

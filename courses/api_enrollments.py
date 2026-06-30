@@ -2,11 +2,14 @@ from ninja import Router
 from ninja.errors import HttpError
 from django.shortcuts import get_object_or_404
 from typing import List
-
-# Pastikan model Lesson sudah di-import jika ada, sesuaikan dengan nama modelmu
 from .models import Course, Lesson 
 from .schemas import CourseOut, EnrollIn
 from config.security import JWTAuth, is_student
+
+# ==========================================
+# 1. IMPORT KEDUA TASK CELERY DI SINI
+# ==========================================
+from .tasks import send_enrollment_email, generate_certificate
 
 enrollment_router = Router(tags=["Enrollments"])
 
@@ -21,6 +24,13 @@ def enroll_course(request, payload: EnrollIn):
         raise HttpError(400, "Anda sudah terdaftar di kursus ini")
         
     course.enrolled_students.add(request.auth)
+    
+    # ==========================================
+    # 2. TRIGGER TASK CELERY: KIRIM EMAIL (Background)
+    # ==========================================
+    # request.auth menyimpan data user yang sedang login, kita ambil email-nya
+    send_enrollment_email.delay(request.auth.email, course.title)
+    
     return {"success": True, "message": f"Berhasil mendaftar ke kursus: {course.title}"}
 
 # 2. GET /api/enrollments/my-courses (Protected - Student melihat kursusnya)
@@ -38,7 +48,13 @@ def mark_progress(request, lesson_id: int):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     
     # Asumsi ada relasi ManyToMany 'completed_by' di model Lesson, atau logika sejenis
-    # Sesuaikan bagian ini jika struktur model progress-mu berbeda
     # lesson.completed_by.add(request.auth)
+    
+    # ==========================================
+    # 3. TRIGGER TASK CELERY: GENERATE SERTIFIKAT (Background)
+    # ==========================================
+    # (Untuk demonstrasi, kita asumsikan saat sebuah materi selesai, sertifikat langsung dibuat)
+    # Kita butuh field 'course' dari Lesson untuk mengambil judul kursus (lesson.course.title)
+    generate_certificate.delay(request.auth.username, lesson.course.title)
     
     return {"success": True, "message": f"Materi '{lesson.title}' berhasil ditandai selesai!"}
